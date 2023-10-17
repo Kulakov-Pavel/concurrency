@@ -6,12 +6,12 @@ import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinPool;
 
 public class ReportServiceCF {
 
-    private ExecutorService executor = ForkJoinPool.commonPool();
+//    private ExecutorService executor = ForkJoinPool.commonPool();
+    ExecutorService executor = new ForkJoinPool();
     private LoadGenerator loadGenerator = new LoadGenerator();
 
     public Others.Report getReport() {

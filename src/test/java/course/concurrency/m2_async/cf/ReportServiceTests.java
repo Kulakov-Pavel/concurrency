@@ -1,7 +1,6 @@
 package course.concurrency.m2_async.cf;
 
 import course.concurrency.m2_async.cf.report.ReportServiceCF;
-import course.concurrency.m2_async.cf.report.ReportServiceExecutors;
 import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.CountDownLatch;

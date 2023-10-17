@@ -7,20 +7,19 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Component;
 
-import java.util.concurrent.CompletableFuture;
-
 @Component
 public class AsyncClassTest {
 
     @Autowired
     public ApplicationContext context;
 
-//    @Autowired
-//    @Qualifier("applicationTaskExecutor")
-//    private ThreadPoolTaskExecutor executor;
+    @Autowired
+    @Qualifier("applicationTaskExecutor")
+    private ThreadPoolTaskExecutor executor;
 
     @Async
     public void runAsyncTask() {
+//        sleep(3);
         System.out.println("runAsyncTask: " + Thread.currentThread().getName());
     }
 
@@ -28,5 +27,13 @@ public class AsyncClassTest {
     public void internalTask() {
         System.out.println("internalTask: " + Thread.currentThread().getName());
     };
+
+    public void sleep(int seconds) {
+        try {
+            Thread.sleep(seconds * 1000L);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
 }
 

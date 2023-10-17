@@ -8,9 +8,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 
 public class ReportServiceExecutors {
 
@@ -20,7 +17,7 @@ public class ReportServiceExecutors {
 //            3000,  TimeUnit.MILLISECONDS,
 //            new LinkedBlockingQueue<>(4));
 
-    private ExecutorService executor = Executors.newFixedThreadPool(64);
+    private ExecutorService executor = Executors.newFixedThreadPool(4);
 
     private LoadGenerator loadGenerator = new LoadGenerator();
 
