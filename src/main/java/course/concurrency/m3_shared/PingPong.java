@@ -2,37 +2,38 @@ package course.concurrency.m3_shared;
 
 import java.util.concurrent.TimeUnit;
 
-public class PingPong {
+import static course.concurrency.m3_shared.PingPong.Value.*;
 
+public class PingPong {
     private final static Class<PingPong> lock = PingPong.class;
-    private static volatile boolean started;
+    private static volatile Value value;
 
     public static void ping() {
         synchronized (lock) {
-            started = true;
-            System.out.println("Ping has started the game...\n");
             for (; ; ) {
-                sleep(1);
-                System.out.println("ping");
-                lock.notify();
-                waitThread();
+                if (value == PONG || null == value) {
+                    sleep(1);
+                    System.out.println(PING.value);
+                    value = PING;
+                } else {
+                    lock.notify();
+                    waitThread();
+                }
             }
         }
     }
 
     public static void pong() {
         synchronized (lock) {
-            if (started) {
-                for (; true; ) {
+            for (; ; ) {
+                if (value == PING) {
                     sleep(1);
-                    System.out.println("pong");
+                    System.out.println(PONG.value);
+                    value = PONG;
+                } else {
                     lock.notify();
                     waitThread();
                 }
-            } else {
-                System.out.println("Pong passes the ball to Ping");
-                waitThread();
-                pong();
             }
         }
     }
@@ -56,7 +57,19 @@ public class PingPong {
     public static void main(String[] args) {
         Thread t1 = new Thread(PingPong::ping);
         Thread t2 = new Thread(PingPong::pong);
-        t1.start();
         t2.start();
+        t1.start();
     }
+
+    enum Value {
+        PING("ping"),
+        PONG("pong");
+
+        public final String value;
+
+        Value(String value) {
+            this.value = value;
+        }
+    }
+
 }
