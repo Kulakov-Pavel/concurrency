@@ -9,30 +9,38 @@ public class PingPong {
     private static volatile Value value;
 
     public static void ping() {
-        synchronized (lock) {
-            for (; ; ) {
-                if (value == PONG || null == value) {
+        for (; ; ) {
+            if (value == PANG || null == value) {
+                synchronized (lock) {
                     sleep(1);
                     System.out.println(PING.value);
                     value = PING;
-                } else {
-                    lock.notify();
-                    waitThread();
                 }
             }
         }
     }
 
     public static void pong() {
-        synchronized (lock) {
-            for (; ; ) {
-                if (value == PING) {
+
+        for (; ; ) {
+            if (value == PING) {
+                synchronized (lock) {
                     sleep(1);
                     System.out.println(PONG.value);
                     value = PONG;
-                } else {
-                    lock.notify();
-                    waitThread();
+                }
+            }
+        }
+    }
+
+    public static void pang() {
+
+        for (; ; ) {
+            if (value == PONG) {
+                synchronized (lock) {
+                    sleep(1);
+                    System.out.println(PANG.value);
+                    value = PANG;
                 }
             }
         }
@@ -57,13 +65,16 @@ public class PingPong {
     public static void main(String[] args) {
         Thread t1 = new Thread(PingPong::ping);
         Thread t2 = new Thread(PingPong::pong);
+        Thread t3 = new Thread(PingPong::pang);
+        t3.start();
         t2.start();
         t1.start();
     }
 
     enum Value {
         PING("ping"),
-        PONG("pong");
+        PONG("pong"),
+        PANG("pang");
 
         public final String value;
 
