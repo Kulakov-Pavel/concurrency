@@ -13,7 +13,7 @@ public class Notifier {
 
     private void imitateSending() {
         try {
-            Thread.sleep(2);
+            Thread.sleep(2000);
         } catch (InterruptedException ignored) {}
     }
 

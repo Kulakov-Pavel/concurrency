@@ -15,9 +15,7 @@ public class SpringBootAsyncTest {
     // this method executes after application start
     @EventListener(ApplicationReadyEvent.class)
     public void actionAfterStartup() {
-        for (int i = 0; i < 1000; i++) {
-            testClass.runAsyncTask();
-        }
+
     }
 
     public static void main(String[] args) {

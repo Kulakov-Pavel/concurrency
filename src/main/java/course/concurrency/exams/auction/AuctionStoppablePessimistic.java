@@ -8,17 +8,19 @@ public class AuctionStoppablePessimistic implements AuctionStoppable {
         this.notifier = notifier;
     }
 
-    private volatile Bid latestBid = initialBid;
+    private volatile Bid latestBid = Bid.initialBid;
     private volatile boolean running = true;
 
-    public synchronized boolean propose(Bid bid) {
-        if(!running) {
+    public boolean propose(Bid bid) {
+        if (!running) {
             return false;
         }
-        if (bid.getPrice() > latestBid.getPrice()) {
-            notifier.sendOutdatedMessage(latestBid);
-            latestBid = bid;
-            return true;
+        if (bid.getPrice() > latestBid.getPrice() && running) {
+            synchronized (latestBid) {
+                notifier.sendOutdatedMessage(latestBid);
+                latestBid = bid;
+                return true;
+            }
         }
         return false;
     }

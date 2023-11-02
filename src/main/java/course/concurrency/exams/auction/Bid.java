@@ -5,6 +5,8 @@ public class Bid {
     private Long participantId;
     private Long price;
 
+    public static final Bid initialBid = new Bid(null, null, 0L);
+
     public Bid(Long id, Long participantId, Long price) {
         this.id = id;
         this.participantId = participantId;

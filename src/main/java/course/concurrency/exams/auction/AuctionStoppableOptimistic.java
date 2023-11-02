@@ -10,7 +10,7 @@ public class AuctionStoppableOptimistic implements AuctionStoppable {
         this.notifier = notifier;
     }
 
-    private AtomicMarkableReference<Bid> latestBid = new AtomicMarkableReference<>(initialBid, true);
+    private AtomicMarkableReference<Bid> latestBid = new AtomicMarkableReference<>(Bid.initialBid, true);
 
     public boolean propose(Bid bid) {
         if(!latestBid.isMarked()) {
