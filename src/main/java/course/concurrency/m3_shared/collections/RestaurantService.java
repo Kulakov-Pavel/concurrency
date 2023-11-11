@@ -22,19 +22,18 @@ public class RestaurantService {
     }
 
     public void addToStat(String restaurantName) {
-        stat.compute(restaurantName, (k, v) -> {
-            if(v == null) {
-                v = new LongAdder();
-            }
-            v.increment();
-            return v;
-        });
-
+        stat.computeIfAbsent(restaurantName, k -> new LongAdder());
+        stat.computeIfPresent(restaurantName, (k, v) -> incrementAndGet(v));
     }
 
     public Set<String> printStat() {
         return stat.entrySet().stream()
                 .map(e -> String.format("%s - %s", e.getKey(), e.getValue().sum()))
                 .collect(Collectors.toUnmodifiableSet());
+    }
+
+    private LongAdder incrementAndGet(LongAdder longAdder) {
+        longAdder.increment();
+        return longAdder;
     }
 }
