@@ -22,8 +22,8 @@ public class RestaurantService {
     }
 
     public void addToStat(String restaurantName) {
-        stat.computeIfAbsent(restaurantName, k -> new LongAdder());
-        stat.computeIfPresent(restaurantName, (k, v) -> incrementAndGet(v));
+        stat.computeIfAbsent(restaurantName, k -> new LongAdder())
+                .increment();
     }
 
     public Set<String> printStat() {
