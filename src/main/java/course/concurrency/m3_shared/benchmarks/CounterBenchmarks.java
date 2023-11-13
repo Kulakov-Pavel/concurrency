@@ -1,6 +1,15 @@
 package course.concurrency.m3_shared.benchmarks;
 
-import org.openjdk.jmh.annotations.*;
+import org.openjdk.jmh.annotations.Benchmark;
+import org.openjdk.jmh.annotations.BenchmarkMode;
+import org.openjdk.jmh.annotations.Group;
+import org.openjdk.jmh.annotations.GroupThreads;
+import org.openjdk.jmh.annotations.Mode;
+import org.openjdk.jmh.annotations.OutputTimeUnit;
+import org.openjdk.jmh.annotations.Scope;
+import org.openjdk.jmh.annotations.Setup;
+import org.openjdk.jmh.annotations.State;
+import org.openjdk.jmh.results.format.ResultFormatType;
 import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.RunnerException;
 import org.openjdk.jmh.runner.options.Options;
@@ -10,7 +19,11 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.LongAdder;
-import java.util.concurrent.locks.*;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.concurrent.locks.StampedLock;
 
 @State(Scope.Benchmark)
 @BenchmarkMode(Mode.Throughput)
@@ -18,7 +31,7 @@ import java.util.concurrent.locks.*;
 public class CounterBenchmarks {
 
     // Change WRITERS and READERS to experiment
-    public static final int WRITERS = 7;
+    public static final int WRITERS = 23;
     public static final int READERS = 1;
 
     private final AtomicLong atomicLongCounter = new AtomicLong();
@@ -55,8 +68,8 @@ public class CounterBenchmarks {
         Options options = new OptionsBuilder()
                 .include(CounterBenchmarks.class.getName())
                 .forks(1)
-//                .resultFormat(ResultFormatType.JSON)
-//                .result("benchmark-result.json")
+                .resultFormat(ResultFormatType.JSON)
+                .result("benchmark-result.json")
                 .build();
 
         new Runner(options).run();
