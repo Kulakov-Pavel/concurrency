@@ -10,7 +10,6 @@ public class ThreadPoolTask {
 
     // Task #1
     public ThreadPoolExecutor getLifoExecutor() {
-//        return (ThreadPoolExecutor)Executors.newFixedThreadPool(8);
         return new ThreadPoolExecutor(8, 8, 0L, TimeUnit.MILLISECONDS,
                 new LIFOBlockingDeque<>());
     }
