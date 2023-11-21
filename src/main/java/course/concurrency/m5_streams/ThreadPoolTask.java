@@ -1,6 +1,5 @@
 package course.concurrency.m5_streams;
 
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -16,23 +15,8 @@ public class ThreadPoolTask {
 
     // Task #2
     public ThreadPoolExecutor getRejectExecutor() {
-        return new CustomThreadPoolExecutor(8, 8, 0L, TimeUnit.MILLISECONDS,
-                new LinkedBlockingQueue<>());
-    }
-
-    private static class CustomThreadPoolExecutor extends ThreadPoolExecutor {
-        public CustomThreadPoolExecutor(int corePoolSize, int maximumPoolSize, long keepAliveTime, TimeUnit unit,
-                                        BlockingQueue<Runnable> workQueue) {
-            super(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue);
-        }
-
-        @Override
-        public void execute(Runnable command) {
-            if(getActiveCount() == getMaximumPoolSize()) {
-                return;
-            }
-            super.execute(command);
-        }
+        return new ThreadPoolExecutor(7, 7, 1, TimeUnit.SECONDS,
+                new LinkedBlockingQueue<>(1), new ThreadPoolExecutor.DiscardPolicy());
     }
 
     private static class LIFOBlockingDeque<T> extends LinkedBlockingDeque<T> {
