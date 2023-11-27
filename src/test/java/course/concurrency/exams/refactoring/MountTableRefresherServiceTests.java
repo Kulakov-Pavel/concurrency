@@ -46,7 +46,7 @@ public class MountTableRefresherServiceTests {
         when(manager.refresh()).thenReturn(true);
 
         List<Others.RouterState> states = addresses.stream()
-                .map(a -> new Others.RouterState(a)).collect(toList());
+                .map(Others.RouterState::new).collect(toList());
         when(routerStore.getCachedRecords()).thenReturn(states);
         // smth more
 

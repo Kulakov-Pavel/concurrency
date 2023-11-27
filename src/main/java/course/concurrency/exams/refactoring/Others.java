@@ -1,5 +1,7 @@
 package course.concurrency.exams.refactoring;
 
+import lombok.Getter;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -28,17 +30,15 @@ public class Others {
 
     }
 
+    @Getter
     public static class RouterState {
-        private static AtomicInteger counter = new AtomicInteger(0);
-        private String adminAddress;
+        private final static AtomicInteger counter = new AtomicInteger(0);
+        private final String adminAddress;
 
         public RouterState(String address) {
             this.adminAddress = address + counter.incrementAndGet();
         }
 
-        public String getAdminAddress() {
-            return adminAddress;
-        }
     }
 
     public static class RouterStore {

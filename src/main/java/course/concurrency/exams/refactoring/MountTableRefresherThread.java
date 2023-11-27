@@ -1,16 +1,22 @@
 package course.concurrency.exams.refactoring;
 
-import static course.concurrency.exams.refactoring.Others.*;
+import lombok.Getter;
 
-import java.util.concurrent.CountDownLatch;
+import static course.concurrency.exams.refactoring.Others.MountTableManager;
 
 public class MountTableRefresherThread extends Thread {
 
+    /**
+     * -- GETTER --
+     *
+     * @return true if cache was refreshed successfully.
+     */
+    @Getter
     private boolean success;
     /** Admin server on which refreshed to be invoked. */
-    private String adminAddress;
-    private CountDownLatch countDownLatch;
-    private MountTableManager manager;
+    @Getter
+    private final String adminAddress;
+    private final MountTableManager manager;
 
     public MountTableRefresherThread(MountTableManager manager,
                                      String adminAddress) {
@@ -34,22 +40,7 @@ public class MountTableRefresherThread extends Thread {
      */
     @Override
     public void run() {
-        try {
-            success = manager.refresh();
-        } finally {
-            countDownLatch.countDown();
-        }
-    }
-
-    /**
-     * @return true if cache was refreshed successfully.
-     */
-    public boolean isSuccess() {
-        return success;
-    }
-
-    public void setCountDownLatch(CountDownLatch countDownLatch) {
-        this.countDownLatch = countDownLatch;
+        success = manager.refresh();
     }
 
     @Override
@@ -58,7 +49,4 @@ public class MountTableRefresherThread extends Thread {
                 + adminAddress + "]";
     }
 
-    public String getAdminAddress() {
-        return adminAddress;
-    }
 }

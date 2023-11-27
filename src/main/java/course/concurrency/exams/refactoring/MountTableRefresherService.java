@@ -1,8 +1,7 @@
 package course.concurrency.exams.refactoring;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
@@ -68,42 +67,19 @@ public class MountTableRefresherService {
      * Refresh mount table cache of this router as well as all other routers.
      */
     public void refresh() {
-        List<Others.RouterState> cachedRecords = routerStore.getCachedRecords();
-        List<MountTableRefresherThread> refreshThreads = new ArrayList<>();
-        for (Others.RouterState routerState : cachedRecords) {
-            String adminAddress = routerState.getAdminAddress();
-            if (adminAddress == null || adminAddress.length() == 0) {
-                // this router has not enabled router admin.
-                continue;
-            }
-            if (isLocalAdmin(adminAddress)) {
-                /*
-                 * Local router's cache update does not require RPC call, so no need for
-                 * RouterClient
-                 */
-                refreshThreads.add(getLocalRefresher(adminAddress));
-            } else {
-                refreshThreads.add(new MountTableRefresherThread(
-                        new Others.MountTableManager(adminAddress), adminAddress));
-            }
-        }
+        List<MountTableRefresherThread> refreshThreads =
+                routerStore.getCachedRecords().stream()
+                        .map(Others.RouterState::getAdminAddress)
+                        .filter(address -> address != null && !address.isEmpty())
+                        .map(this::getRefresher)
+                        .toList();
         if (!refreshThreads.isEmpty()) {
             invokeRefresh(refreshThreads);
         }
-//        List<MountTableRefresherThread> refreshThreads =
-//                routerStore.getCachedRecords().stream()
-//                        .map(Others.RouterState::getAdminAddress)
-//                        .filter(address -> address != null && !address.isEmpty())
-//                        .map(address -> isLocalAdmin(address) ? getLocalRefresher(address) :
-//                                new MountTableRefresherThread(new Others.MountTableManager(address), address))
-//                        .toList();
-//        if (!refreshThreads.isEmpty()) {
-//            invokeRefresh(refreshThreads);
-//        }
     }
 
-    protected MountTableRefresherThread getLocalRefresher(String adminAddress) {
-        return new MountTableRefresherThread(new Others.MountTableManager("local"), adminAddress);
+    protected MountTableRefresherThread getRefresher(String adminAddress) {
+        return new MountTableRefresherThread(new Others.MountTableManager(adminAddress), adminAddress);
     }
 
     private void removeFromCache(String adminAddress) {
@@ -111,25 +87,9 @@ public class MountTableRefresherService {
     }
 
     private void invokeRefresh(List<MountTableRefresherThread> refreshThreads) {
-        CountDownLatch countDownLatch = new CountDownLatch(refreshThreads.size());
-        // start all the threads
-        for (MountTableRefresherThread refThread : refreshThreads) {
-            refThread.setCountDownLatch(countDownLatch);
-            refThread.start();
-        }
-        try {
-            /*
-             * Wait for all the thread to complete, await method returns false if
-             * refresh is not finished within specified time
-             */
-            boolean allReqCompleted =
-                    countDownLatch.await(cacheUpdateTimeout, TimeUnit.MILLISECONDS);
-            if (!allReqCompleted) {
-                log("Not all router admins updated their cache");
-            }
-        } catch (InterruptedException e) {
-            log("Mount table cache refresher was interrupted.");
-        }
+        refreshThreads.stream()
+                .map(CompletableFuture::runAsync)
+                .forEach(CompletableFuture::join);
         logResult(refreshThreads);
     }
 
