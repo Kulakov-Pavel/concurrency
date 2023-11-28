@@ -15,60 +15,95 @@ public class CustomBlockingQueue<T> {
     private Node<T> tail;
     private final Object lock = new Object();
 
+    private int in;
+    private int out;
+
     public CustomBlockingQueue(int capacity) {
         this.capacity = capacity;
     }
 
-    public void enqueue(T value) {
-        if (size >= capacity) {
-            return;
+    public synchronized void enqueue(T value) {
+        while (size >= capacity) {
+            notifyAll();
+            await();
         }
-        synchronized (lock) {
-            var node = new Node<T>(value);
-            if (head == null) {
-                head = tail = node;
+        ++in;
+        var node = new Node<T>(value);
+        if (head == null) {
+            head = tail = node;
+        } else {
+            tail.next = node;
+            tail = node;
+        }
+        ++size;
+        notifyAll();
+    }
+
+    public synchronized T dequeue() {
+        while (size == 0) {
+            notifyAll();
+            await();
+        }
+        ++out;
+        var node = head;
+        if (size == 1) {
+            head = tail = null;
+        } else {
+            if (size == 2) {
+                head = tail;
             } else {
-                tail.next = node;
-                tail = node;
+                head = head.next;
             }
-            ++size;
+        }
+        --size;
+        notifyAll();
+        return node.getValue();
+    }
+
+    public synchronized List<T> getElementsAsList() {
+        List<T> result = new ArrayList<>();
+        if (head != null) {
+            result.add(head.getValue());
+            Node<T> next = head;
+            while (next.hasNext()) {
+                result.add(next.next.getValue());
+                next = next.getNext();
+            }
+        }
+        return result;
+    }
+
+    public synchronized int size() {
+        return size;
+    }
+
+    private void await() {
+        try {
+            wait();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
         }
     }
 
-    public T dequeue() {
-        if (size == 0) {
-            return null;
-        }
-        synchronized (lock) {
-            var node = head;
-            if (size == 1) {
-                head = tail = null;
-            } else {
-                if (size == 2) {
-                    head = tail;
-                } else {
-                    head = head.next;
-                }
-            }
-            --size;
-            return node.getValue();
-        }
+    @Override
+    public synchronized String toString() {
+        String elements = getElementsAsList().stream()
+                .map(T::toString)
+                .collect(Collectors.joining(", "));
+        return String.format("""
+                size: %d
+                elements: %s
+                """, size, elements);
     }
 
-    public List<T> getElementsAsList() {
-        synchronized (lock) {
-            List<T> result = new ArrayList<>();
-            if (head != null) {
-                result.add(head.getValue());
-                Node<T> next = head;
-                while (next.hasNext()) {
-                    result.add(next.next.getValue());
-                    next = next.getNext();
-                }
-            }
-            return result;
-        }
+    public synchronized String analyse() {
+        return String.format("""
+                size: %d
+                in: %d
+                out: %d
+                """, size, in, out);
     }
+
 
     @Getter
     @Setter
@@ -86,14 +121,4 @@ public class CustomBlockingQueue<T> {
 
     }
 
-    @Override
-    public String toString() {
-        String elements = getElementsAsList().stream()
-                .map(T::toString)
-                .collect(Collectors.joining(", "));
-        return String.format("""
-                size: %d
-                elements: %s
-                """, size, elements);
-    }
 }
