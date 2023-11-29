@@ -15,9 +15,6 @@ public class CustomBlockingQueue<T> {
     private Node<T> tail;
     private final Object lock = new Object();
 
-    private int in;
-    private int out;
-
     public CustomBlockingQueue(int capacity) {
         this.capacity = capacity;
     }
@@ -27,7 +24,6 @@ public class CustomBlockingQueue<T> {
             notifyAll();
             await();
         }
-        ++in;
         var node = new Node<T>(value);
         if (head == null) {
             head = tail = node;
@@ -44,7 +40,6 @@ public class CustomBlockingQueue<T> {
             notifyAll();
             await();
         }
-        ++out;
         var node = head;
         if (size == 1) {
             head = tail = null;
@@ -95,15 +90,6 @@ public class CustomBlockingQueue<T> {
                 elements: %s
                 """, size, elements);
     }
-
-    public synchronized String analyse() {
-        return String.format("""
-                size: %d
-                in: %d
-                out: %d
-                """, size, in, out);
-    }
-
 
     @Getter
     @Setter

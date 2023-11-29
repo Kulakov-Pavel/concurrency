@@ -5,13 +5,11 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
@@ -22,32 +20,43 @@ public class CustomBlockingQueueTests {
 
     @ParameterizedTest
     @ValueSource(ints = {10, 1000, 10_000, 1_000_000})
-    void whenWritersEqualsReaders_thenRestEqualsZero(int value) throws ExecutionException, InterruptedException {
-        int capacity = 7;
+    void whenWritersEqualsReaders_thenRestEqualsZero(int value) throws InterruptedException {
+        int capacity = 16;
         queue = new CustomBlockingQueue<>(capacity);
+        CountDownLatch latch = new CountDownLatch(1);
 
-        List<Future<?>> futures = Stream.iterate(0, n -> ++n).limit(value)
-                .map(i -> i % 2 == 0 ? pool.submit(() -> queue.enqueue(i)) : pool.submit(() -> queue.dequeue()))
-                .toList();
-        for (Future<?> f : futures) {
-            f.get();
+        for (int i = 0; i < value; i++) {
+            if(i % 2 == 0) {
+                pool.submit(() -> {
+                    queue.enqueue(0);
+                    await(latch);
+                });
+            } else {
+                pool.submit(() -> {
+                    queue.dequeue();
+                    await(latch);
+                });
+            }
         }
+        latch.countDown();
+        pool.shutdown();
+        boolean done = pool.awaitTermination(60, SECONDS);
 
-        assertAll(
-                () -> assertThat(queue.size()).isEqualTo(0),
-                () -> assertThat(queue.analyse()).contains(String.format("in: %d", value / 2)),
-                () -> assertThat(queue.analyse()).contains(String.format("out: %d", value / 2))
-        );
+        assertThat(done).isTrue();
+        assertThat(queue.size()).isEqualTo(0);
     }
 
     @ParameterizedTest
     @ValueSource(ints = {10, 100, 1000})
     void whenQueueWorks_thenItWorksInFIFO(int value) {
         queue = new CustomBlockingQueue<>(value);
-        List<Integer> benchmark = Stream.iterate(0, n -> ++n).limit(value).toList();
+        List<Integer> expected = new ArrayList<>();
         List<Integer> result = new ArrayList<>();
 
-        IntStream.range(0, value).forEach(queue::enqueue);
+        for (int i = 0; i < value; i++) {
+            expected.add(i);
+            queue.enqueue(i);
+        }
         for (int i = 0; i < value; i++) {
             result.add(queue.dequeue());
         }
@@ -55,10 +64,9 @@ public class CustomBlockingQueueTests {
         assertAll(
                 () -> assertThat(queue.size()).isEqualTo(0),
                 () -> assertThat(result.size()).isEqualTo(value),
-                () -> assertThat(result).isEqualTo(benchmark)
+                () -> assertThat(result).isEqualTo(expected)
         );
     }
-
 
     @ParameterizedTest
     @ValueSource(ints = {10, 1000, 10_000, 1_000_000})
@@ -74,12 +82,15 @@ public class CustomBlockingQueueTests {
             }
         }
 
-        assertAll(
-                () -> assertThat(queue.size()).isEqualTo(0),
-                () -> assertThat(queue.analyse()).contains(String.format("in: %d", value / 2)),
-                () -> assertThat(queue.analyse()).contains(String.format("out: %d", value / 2))
-        );
+        assertThat(queue.size()).isEqualTo(0);
+    }
 
+    private static void await(CountDownLatch latch) {
+        try {
+            latch.await();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 
 }
