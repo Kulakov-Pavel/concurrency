@@ -27,17 +27,19 @@ public class CustomBlockingQueueTests {
 
         for (int i = 0; i < value; i++) {
             if(i % 2 == 0) {
+                int finalI = i;
                 pool.submit(() -> {
-                    queue.enqueue(0);
                     await(latch);
+                    queue.enqueue(finalI);
                 });
             } else {
                 pool.submit(() -> {
-                    queue.dequeue();
                     await(latch);
+                    queue.dequeue();
                 });
             }
         }
+        SECONDS.sleep(2);
         latch.countDown();
         pool.shutdown();
         boolean done = pool.awaitTermination(60, SECONDS);
