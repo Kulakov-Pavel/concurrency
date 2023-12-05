@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -72,13 +73,17 @@ public class CustomBlockingQueueTests {
     @Test
     void whenWritersMoreThanReaders_thenQueueWillBlock() {
         int capacity = 2;
+        int tasks = capacity + 1;
         queue = new CustomBlockingQueue<>(capacity);
 
-        for (int i = 0; i < capacity + 1; i++) {
+        for (int i = 0; i < tasks; i++) {
             pool.submit(() -> queue.enqueue(0));
         }
 
-        assertThat(queue.size()).isEqualTo(capacity);
+        assertAll(
+                () -> assertThat(queue.size()).isEqualTo(capacity),
+                () -> assertThat(((ThreadPoolExecutor)pool).getTaskCount()).isEqualTo(tasks)
+        );
     }
 
     @Test
@@ -89,8 +94,10 @@ public class CustomBlockingQueueTests {
         for (int i = 0; i < capacity; i++) {
             pool.submit(() -> queue.dequeue());
         }
-
-        assertThat(queue.size()).isEqualTo(0);
+        assertAll(
+                () -> assertThat(((ThreadPoolExecutor)pool).getTaskCount()).isEqualTo(capacity),
+                () -> assertThat(queue.size()).isEqualTo(0)
+        );
     }
 
     private static void await(CountDownLatch latch) {
