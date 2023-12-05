@@ -88,10 +88,22 @@ public class MountTableRefresherService {
 
     private void invokeRefresh(List<MountTableRefresher> refreshers) {
         List<CompletableFuture<Void>> futures = refreshers.stream()
-                .map(t -> CompletableFuture.runAsync(t::refresh))
-                .toList();
+                .map(t -> CompletableFuture.runAsync(t::refresh)
+                        .handle((res, ex) -> {
+                            if (ex != null) {
+                                log("Mount table cache refresher was interrupted.");
+                            }
+                            return res;
+                        })).toList();
         futures.forEach(CompletableFuture::join);
+        if (futures.stream().
+
+                anyMatch(CompletableFuture::isCancelled)) {
+            log("Not all router admins updated their cache");
+        }
+
         logResult(refreshers);
+
     }
 
     private boolean isLocalAdmin(String adminAddress) {

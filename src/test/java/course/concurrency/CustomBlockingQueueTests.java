@@ -1,5 +1,6 @@
 package course.concurrency;
 
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -16,7 +17,7 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 public class CustomBlockingQueueTests {
 
     private CustomBlockingQueue<Integer> queue;
-    private final ExecutorService pool = Executors.newFixedThreadPool(10);
+    private final ExecutorService pool = Executors.newFixedThreadPool(1_000);
 
     @ParameterizedTest
     @ValueSource(ints = {10, 1000, 10_000, 1_000_000})
@@ -24,9 +25,8 @@ public class CustomBlockingQueueTests {
         int capacity = 16;
         queue = new CustomBlockingQueue<>(capacity);
         CountDownLatch latch = new CountDownLatch(1);
-
         for (int i = 0; i < value; i++) {
-            if(i % 2 == 0) {
+            if (i % 2 == 0) {
                 int finalI = i;
                 pool.submit(() -> {
                     await(latch);
@@ -39,7 +39,6 @@ public class CustomBlockingQueueTests {
                 });
             }
         }
-        SECONDS.sleep(2);
         latch.countDown();
         pool.shutdown();
         boolean done = pool.awaitTermination(60, SECONDS);
@@ -70,18 +69,25 @@ public class CustomBlockingQueueTests {
         );
     }
 
-    @ParameterizedTest
-    @ValueSource(ints = {10, 1000, 10_000, 1_000_000})
-    void whenQueueWorksInSingleThread_thenSuccess(int value) {
-        int capacity = 16;
+    @Test
+    void whenWritersMoreThanReaders_thenQueueWillBlock() {
+        int capacity = 2;
         queue = new CustomBlockingQueue<>(capacity);
 
-        for (int i = 0; i < value; i++) {
-            if (i % 2 == 0) {
-                queue.enqueue(i);
-            } else {
-                queue.dequeue();
-            }
+        for (int i = 0; i < capacity + 1; i++) {
+            pool.submit(() -> queue.enqueue(0));
+        }
+
+        assertThat(queue.size()).isEqualTo(capacity);
+    }
+
+    @Test
+    void whenReadersMoreThanWriters_thenQueueWillBlock() {
+        int capacity = 2;
+        queue = new CustomBlockingQueue<>(capacity);
+
+        for (int i = 0; i < capacity; i++) {
+            pool.submit(() -> queue.dequeue());
         }
 
         assertThat(queue.size()).isEqualTo(0);
